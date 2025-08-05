@@ -1,0 +1,30 @@
+{
+  "name": "microservices-backend",
+  "version": "1.0.0",
+  "description": "Microservices backend with GraphQL Gateway",
+  "scripts": {
+    "start": "docker-compose up",
+    "start:dev": "docker-compose up --build",
+    "stop": "docker-compose down",
+    "clean": "docker-compose down -v",
+    "logs": "docker-compose logs -f",
+    "install:all": "npm run install:auth && npm run install:user && npm run install:timetracking && npm run install:gateway",
+    "install:auth": "cd auth-service && npm install",
+    "install:user": "cd user-service && npm install",
+    "install:timetracking": "cd timetracking-service && npm install",
+    "install:gateway": "cd gateway && npm install"
+  },
+  "keywords": [
+    "microservices",
+    "nestjs",
+    "graphql",
+    "docker",
+    "postgresql",
+    "mongodb",
+    "jwt",
+    "authentication",
+    "timetracking"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}

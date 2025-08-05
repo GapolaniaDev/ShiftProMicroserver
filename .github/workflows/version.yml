@@ -1,0 +1,51 @@
+name: Version Management
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to version'
+        required: true
+        type: choice
+        options:
+        - auth-service
+        - user-service
+        - timetracking-service
+        - gateway
+      version_type:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+        - patch
+        - minor
+        - major
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    
+    - name: Configure Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+    
+    - name: Run version script
+      run: |
+        chmod +x scripts/version.sh
+        ./scripts/version.sh ${{ github.event.inputs.service }} ${{ github.event.inputs.version_type }}
+    
+    - name: Push changes and tags
+      run: |
+        git push origin main --tags

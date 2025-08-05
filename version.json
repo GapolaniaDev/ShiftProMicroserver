@@ -1,0 +1,21 @@
+{
+  "services": {
+    "auth-service": {
+      "version": "1.0.0",
+      "changelog": "Initial release"
+    },
+    "user-service": {
+      "version": "1.0.0", 
+      "changelog": "Initial release"
+    },
+    "timetracking-service": {
+      "version": "1.0.0",
+      "changelog": "Initial release"
+    },
+    "gateway": {
+      "version": "1.0.0",
+      "changelog": "Initial release"
+    }
+  },
+  "lastUpdated": "2025-08-05T00:00:00Z"
+}

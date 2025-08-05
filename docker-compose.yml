@@ -1,0 +1,135 @@
+version: '3.8'
+
+services:
+  # Databases
+  auth-postgres:
+    image: postgres:15-alpine
+    container_name: auth-postgres
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: auth_user
+      POSTGRES_PASSWORD: auth_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - auth_postgres_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+
+  timetracking-postgres:
+    image: postgres:15-alpine
+    container_name: timetracking-postgres
+    environment:
+      POSTGRES_DB: timetracking_db
+      POSTGRES_USER: timetracking_user
+      POSTGRES_PASSWORD: timetracking_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - timetracking_postgres_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+
+  user-mongodb:
+    image: mongo:7-jammy
+    container_name: user-mongodb
+    environment:
+      MONGO_INITDB_DATABASE: user_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - user_mongodb_data:/data/db
+    networks:
+      - microservices-network
+
+  # Microservices
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    environment:
+      PORT: 5001
+      DB_HOST: auth-postgres
+      DB_PORT: 5432
+      DB_USERNAME: auth_user
+      DB_PASSWORD: auth_password
+      DB_DATABASE: auth_db
+      JWT_SECRET: auth-jwt-secret-key-change-this-in-production
+      JWT_EXPIRES_IN: 24h
+    ports:
+      - "5001:5001"
+    depends_on:
+      - auth-postgres
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    environment:
+      NODE_ENV: development
+      PORT: 5002
+      MONGODB_URI: mongodb://user-mongodb:27017/user_db
+    ports:
+      - "5002:5002"
+    volumes:
+      - ./user-service/src:/app/src
+      - ./user-service/package.json:/app/package.json
+    command: npm run start:dev
+    depends_on:
+      - user-mongodb
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  timetracking-service:
+    build: ./timetracking-service
+    container_name: timetracking-service
+    environment:
+      PORT: 5003
+      DB_HOST: timetracking-postgres
+      DB_PORT: 5432
+      DB_USERNAME: timetracking_user
+      DB_PASSWORD: timetracking_password
+      DB_DATABASE: timetracking_db
+    ports:
+      - "5003:5003"
+    depends_on:
+      - timetracking-postgres
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # GraphQL Gateway
+  gateway:
+    build: ./gateway
+    container_name: graphql-gateway
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      AUTH_SERVICE_URL: http://auth-service:5001
+      USER_SERVICE_URL: http://user-service:5002
+      TIMETRACKING_SERVICE_URL: http://timetracking-service:5003
+      JWT_SECRET: auth-jwt-secret-key-change-this-in-production
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./gateway/src:/app/src
+      - ./gateway/package.json:/app/package.json
+    command: npm run start:dev
+    depends_on:
+      - auth-service
+      - user-service
+      - timetracking-service
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+volumes:
+  auth_postgres_data:
+  timetracking_postgres_data:
+  user_mongodb_data:
+
+networks:
+  microservices-network:
+    driver: bridge
