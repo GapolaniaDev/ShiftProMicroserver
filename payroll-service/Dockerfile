@@ -10,6 +10,6 @@ RUN npm run build
 
 RUN npm prune --production
 
-EXPOSE 5005
+EXPOSE 5006
 
 CMD ["npm", "run", "start:prod"]
