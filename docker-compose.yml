@@ -30,6 +30,48 @@ services:
     networks:
       - microservices-network
 
+  employee-postgres:
+    image: postgres:15-alpine
+    container_name: employee-postgres
+    environment:
+      POSTGRES_DB: employee_db
+      POSTGRES_USER: employee_user
+      POSTGRES_PASSWORD: employee_password
+    ports:
+      - "5434:5432"
+    volumes:
+      - employee_postgres_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+
+  shift-postgres:
+    image: postgres:15-alpine
+    container_name: shift-postgres
+    environment:
+      POSTGRES_DB: shift_db
+      POSTGRES_USER: shift_user
+      POSTGRES_PASSWORD: shift_password
+    ports:
+      - "5435:5432"
+    volumes:
+      - shift_postgres_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+
+  payroll-postgres:
+    image: postgres:15-alpine
+    container_name: payroll-postgres
+    environment:
+      POSTGRES_DB: payroll_db
+      POSTGRES_USER: payroll_user
+      POSTGRES_PASSWORD: payroll_password
+    ports:
+      - "5436:5432"
+    volumes:
+      - payroll_postgres_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+
   user-mongodb:
     image: mongo:7-jammy
     container_name: user-mongodb
@@ -100,6 +142,61 @@ services:
       - microservices-network
     restart: unless-stopped
 
+  employee-service:
+    build: ./employee-service
+    container_name: employee-service
+    environment:
+      PORT: 5004
+      DB_HOST: employee-postgres
+      DB_PORT: 5432
+      DB_USERNAME: employee_user
+      DB_PASSWORD: employee_password
+      DB_DATABASE: employee_db
+    ports:
+      - "5004:5004"
+    depends_on:
+      - employee-postgres
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  shift-management-service:
+    build: ./shift-management-service
+    container_name: shift-management-service
+    environment:
+      PORT: 5005
+      DB_HOST: shift-postgres
+      DB_PORT: 5432
+      DB_USERNAME: shift_user
+      DB_PASSWORD: shift_password
+      DB_DATABASE: shift_db
+      TIMEZONEDB_API_KEY: ${TIMEZONEDB_API_KEY:-}
+    ports:
+      - "5005:5005"
+    depends_on:
+      - shift-postgres
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  payroll-service:
+    build: ./payroll-service
+    container_name: payroll-service
+    environment:
+      PORT: 5006
+      DB_HOST: payroll-postgres
+      DB_PORT: 5432
+      DB_USERNAME: payroll_user
+      DB_PASSWORD: payroll_password
+      DB_DATABASE: payroll_db
+    ports:
+      - "5006:5006"
+    depends_on:
+      - payroll-postgres
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
   # GraphQL Gateway
   gateway:
     build: ./gateway
@@ -110,6 +207,9 @@ services:
       AUTH_SERVICE_URL: http://auth-service:5001
       USER_SERVICE_URL: http://user-service:5002
       TIMETRACKING_SERVICE_URL: http://timetracking-service:5003
+      EMPLOYEE_SERVICE_URL: http://employee-service:5004
+      SHIFT_SERVICE_URL: http://shift-management-service:5005
+      PAYROLL_SERVICE_URL: http://payroll-service:5006
       JWT_SECRET: auth-jwt-secret-key-change-this-in-production
     ports:
       - "3000:3000"
@@ -121,6 +221,9 @@ services:
       - auth-service
       - user-service
       - timetracking-service
+      - employee-service
+      - shift-management-service
+      - payroll-service
     networks:
       - microservices-network
     restart: unless-stopped
@@ -128,6 +231,9 @@ services:
 volumes:
   auth_postgres_data:
   timetracking_postgres_data:
+  employee_postgres_data:
+  shift_postgres_data:
+  payroll_postgres_data:
   user_mongodb_data:
 
 networks:

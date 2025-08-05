@@ -1,4 +1,5 @@
-import { IsEmail, IsNotEmpty, MinLength, IsOptional } from 'class-validator';
+import { IsEmail, IsNotEmpty, MinLength, IsOptional, IsEnum } from 'class-validator';
+import { UserRole } from '../user/user.entity';
 
 export class LoginDto {
   @IsEmail()
@@ -21,4 +22,8 @@ export class RegisterDto {
 
   @IsOptional()
   lastName?: string;
+
+  @IsOptional()
+  @IsEnum(UserRole)
+  role?: UserRole;
 }

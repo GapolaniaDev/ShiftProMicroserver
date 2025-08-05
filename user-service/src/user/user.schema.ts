@@ -32,6 +32,12 @@ export class User {
   @Prop()
   avatar: string;
 
+  @Prop()
+  employeeId: string;
+
+  @Prop()
+  role: string;
+
   @Prop({ default: Date.now })
   createdAt: Date;
 
